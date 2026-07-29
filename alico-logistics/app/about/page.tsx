@@ -1,29 +1,16 @@
 import Image from "next/image";
+import Hero from "@/components/home/Hero";
 
 export default function AboutPage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative h-[420px]">
-        <Image
-          src="/images/warehouse.jpg"
-          alt="About Alico Logistics"
-          fill
-          className="object-cover"
-        />
-
-        <div className="absolute inset-0 bg-black/60" />
-
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
-          <h1 className="text-5xl md:text-6xl font-bold">
-            About Us
-          </h1>
-
-          <p className="mt-4 text-lg text-gray-200">
-            Delivering Logistics Excellence Across the Globe
-          </p>
-        </div>
-      </section>
+          <Hero
+        heading="WHO WE ARE"
+        title="About Alico Logistics"
+        subtitle="Delivering trusted logistics solutions through innovation, reliability, and global expertise since 2000."
+        image="/images/about-hero.jpg"
+      />
 
       {/* Company */}
       <section className="max-w-7xl mx-auto px-6 py-24">

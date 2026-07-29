@@ -16,7 +16,12 @@ export default function Home() {
       <Header />
 
       <main>
-        <Hero />
+       <Hero
+          heading="GLOBAL FREIGHT FORWARDING"
+          title="Logistics Solutions You Can Trust"
+          subtitle="Reliable freight forwarding, customs clearance, warehousing and supply chain solutions across the world."
+          image="/images/hero.jpg"
+        />
         <Services />
         <About />
         <WhyChooseUs />

@@ -3,12 +3,14 @@
 import { motion } from "framer-motion";
 
 type HeroProps = {
+  heading: string;
   title: string;
   subtitle: string;
   image: string;
 };
 
 export default function Hero({
+  heading,
   title,
   subtitle,
   image,
@@ -39,7 +41,7 @@ export default function Hero({
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-              Global Freight Forwarding
+              {heading}
             </motion.p>
 
             <motion.h1
