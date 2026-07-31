@@ -19,7 +19,7 @@ export default function Hero({
     <section
       className="relative min-h-screen bg-cover bg-center"
       style={{
-         backgroundImage: `url('${image}')`,
+         backgroundImage: `url(${image})`,
       // backgroundImage: "url('/images/hero.jpg')",
       }}
     >
