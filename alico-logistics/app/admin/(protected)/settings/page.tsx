@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import SettingsForm from "@/app/admin/components/SettingsForm";
+import PageHeader from "@/app/admin/components/ui/PageHeader";
+
 
 export default async function SettingsPage() {
   const settingsRows = await prisma.setting.findMany();
@@ -20,19 +22,16 @@ export default async function SettingsPage() {
       settingsMap.phone || "",
     address:
       settingsMap.address || "",
-    logoUrl: settingsMap.logoUrl || "",  
+    logoUrl:
+      settingsMap.logoUrl || "",
   };
 
   return (
     <div className="mx-auto max-w-7xl">
-      <h1 className="text-3xl font-bold text-slate-900">
-        Settings
-      </h1>
-
-      <p className="mt-2 text-slate-600">
-        Manage your company contact information.
-      </p>
-
+      <PageHeader
+        title="Settings"
+        description="Manage your company contact information."
+      />
       <SettingsForm initialSettings={initialSettings} />
     </div>
   );

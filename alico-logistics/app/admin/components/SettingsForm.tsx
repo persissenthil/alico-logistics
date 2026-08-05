@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { toast } from "sonner";
 import { useRef, useState } from "react";
+import FormTextarea from "@/app/admin/components/ui/FormTextarea";
+import FormInput from "@/app/admin/components/ui/FormInput";
 
 type Settings = {
   companyName: string;
@@ -168,96 +170,61 @@ export default function SettingsForm({
           {uploading ? "Uploading..." : "Upload Logo"}
         </button>
       </div>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div>
-            <label
-              htmlFor="companyName"
-              className="mb-2 block font-medium text-slate-700"
-            >
-              Company Name
-            </label>
-
-            <input
-              id="companyName"
-              type="text"
-              required
-              className="w-full rounded-lg border border-slate-300 p-3 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-              value={settings.companyName}
-              onChange={(event) =>
-                setSettings({
-                  ...settings,
-                  companyName: event.target.value,
-                })
-              }
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="companyEmail"
-              className="mb-2 block font-medium text-slate-700"
-            >
-              Email
-            </label>
-
-            <input
-              id="companyEmail"
-              type="email"
-              required
-              className="w-full rounded-lg border border-slate-300 p-3 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-              value={settings.email}
-              onChange={(event) =>
-                setSettings({
-                  ...settings,
-                  email: event.target.value,
-                })
-              }
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label
-              htmlFor="companyPhone"
-              className="mb-2 block font-medium text-slate-700"
-            >
-              Phone
-            </label>
-
-            <input
-              id="companyPhone"
-              type="tel"
-              className="w-full rounded-lg border border-slate-300 p-3 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-              value={settings.phone}
-              onChange={(event) =>
-                setSettings({
-                  ...settings,
-                  phone: event.target.value,
-                })
-              }
-            />
-          </div>
-        </div>
-      <div>
-        <label
-          htmlFor="companyAddress"
-          className="mb-2 block font-medium text-slate-700"
-        >
-          Address
-        </label>
-
-        <textarea
-          id="companyAddress"
-          rows={4}
-          className="w-full rounded-lg border border-slate-300 p-3 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-          value={settings.address}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <FormInput
+          id="companyName"
+          label="Company Name"
+          required
+          value={settings.companyName}
           onChange={(event) =>
             setSettings({
               ...settings,
-              address: event.target.value,
+              companyName: event.target.value,
             })
           }
         />
+
+        <FormInput
+          id="companyEmail"
+          label="Email"
+          type="email"
+          required
+          value={settings.email}
+          onChange={(event) =>
+            setSettings({
+              ...settings,
+              email: event.target.value,
+            })
+          }
+        />
+
+        <div className="md:col-span-2">
+          <FormInput
+            id="companyPhone"
+            label="Phone"
+            type="tel"
+            value={settings.phone}
+            onChange={(event) =>
+              setSettings({
+                ...settings,
+                phone: event.target.value,
+              })
+            }
+          />
+        </div>
       </div>
+        <FormTextarea
+        id="companyAddress"
+        label="Address"
+        rows={4}
+        value={settings.address}
+        onChange={(event) =>
+          setSettings({
+            ...settings,
+            address: event.target.value,
+          })
+        }
+      />
 
       <button
         type="submit"
