@@ -1,6 +1,12 @@
 "use client";
-import { useRouter } from "next/navigation";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Eye, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+
+import ConfirmDialog from "@/app/admin/components/ui/ConfirmDialog";
 
 type Quote = {
   id: number;
@@ -9,6 +15,7 @@ type Quote = {
   service: string;
   origin: string;
   destination: string;
+  status: string;
   createdAt: Date;
 };
 
@@ -20,75 +27,215 @@ export default function QuotesTable({
   quotes,
 }: QuotesTableProps) {
   const router = useRouter();
-  async function handleDelete(id: number) {
-  const confirmed = window.confirm(
-    "Are you sure you want to delete this quote request?"
-  );
 
-  if (!confirmed) return;
+  const [quoteToDelete, setQuoteToDelete] =
+    useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const response = await fetch(`/api/admin/quotes/${id}`, {
-    method: "DELETE",
-  });
+  async function handleDelete() {
+    if (quoteToDelete === null) return;
 
-  if (response.ok) {
-    router.refresh();
-  } else {
-    alert("Failed to delete quote request.");
+    setDeleting(true);
+
+    try {
+      const response = await fetch(
+        `/api/admin/quotes/${quoteToDelete}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete quote request.");
+      }
+
+      toast.success("Quote request deleted successfully.");
+      setQuoteToDelete(null);
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete quote request."
+      );
+    } finally {
+      setDeleting(false);
+    }
   }
-}
+
+  async function handleStatusChange(
+    id: number,
+    status: string
+  ) {
+    try {
+      const response = await fetch(
+        `/api/admin/quotes/${id}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          "Failed to update quote request status."
+        );
+      }
+
+      toast.success("Quote request status updated.");
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to update quote request status."
+      );
+    }
+  }
+
   return (
-    <section className="mt-8">
-      <h2 className="mb-4 text-2xl font-semibold text-slate-900">
-        Recent Quote Requests
-      </h2>
+    <>
+      <section className="mt-10 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-200 px-6 py-5">
+          <h2 className="text-xl font-semibold text-slate-900">
+            Recent Quote Requests
+          </h2>
+        </div>
 
-      <div className="overflow-x-auto rounded-lg bg-white shadow">
-        <table className="min-w-full">
-          <thead className="bg-slate-100">
-            <tr>
-              <th className="px-4 py-3 text-left">Name</th>
-              <th className="px-4 py-3 text-left">Service</th>
-              <th className="px-4 py-3 text-left">Route</th>
-              <th className="px-4 py-3 text-left">Date</th>
-              <th className="px-4 py-3 text-left">Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {quotes.map((quote) => (
-              <tr key={quote.id} className="border-t">
-                <td className="px-4 py-3">{quote.fullName}</td>
-                <td className="px-4 py-3">{quote.service}</td>
-                <td className="px-4 py-3">
-                  {quote.origin} → {quote.destination}
-                </td>
-               <td className="px-4 py-3">
-                {quote.createdAt.toLocaleDateString()}
-              </td>
-
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <Link
-                    href={`/admin/quotes/${quote.id}`}
-                    className="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700"
-                  >
-                    View
-                  </Link>
-
-                  <button
-                    onClick={() => handleDelete(quote.id)}
-                    className="rounded bg-red-600 px-3 py-1 text-white hover:bg-red-700"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </td>
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="px-4 py-3 text-left">
+                  Name
+                </th>
+                <th className="px-4 py-3 text-left">
+                  Service
+                </th>
+                <th className="px-4 py-3 text-left">
+                  Route
+                </th>
+                <th className="px-4 py-3 text-left">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left">
+                  Date
+                </th>
+                <th className="px-4 py-3 text-left">
+                  Actions
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
+            </thead>
+
+            <tbody>
+              {quotes.map((quote) => (
+                <tr
+                  key={quote.id}
+                  className="border-t border-slate-200 transition-colors hover:bg-slate-50"
+                >
+                  <td className="px-4 py-3">
+                    {quote.fullName}
+                  </td>
+
+                  <td className="px-4 py-3">
+                    {quote.service}
+                  </td>
+
+                  <td className="px-4 py-3">
+                    {quote.origin} → {quote.destination}
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <select
+                      value={quote.status}
+                      onChange={(event) =>
+                        handleStatusChange(
+                          quote.id,
+                          event.target.value
+                        )
+                      }
+                      className={`rounded-full border-0 px-3 py-1 text-sm font-medium outline-none ${
+                        quote.status === "New"
+                          ? "bg-green-100 text-green-700"
+                          : quote.status === "In Progress"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : quote.status === "Replied"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-slate-200 text-slate-700"
+                      }`}
+                    >
+                      <option value="New">New</option>
+                      <option value="In Progress">
+                        In Progress
+                      </option>
+                      <option value="Replied">
+                        Replied
+                      </option>
+                      <option value="Closed">
+                        Closed
+                      </option>
+                    </select>
+                  </td>
+
+                  <td className="px-4 py-3">
+                    {quote.createdAt.toLocaleDateString()}
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/admin/quotes/${quote.id}`}
+                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+                      >
+                        <Eye className="h-4 w-4" />
+                        View
+                      </Link>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setQuoteToDelete(quote.id)
+                        }
+                        className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+
+              {quotes.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-6 py-10 text-center text-slate-500"
+                  >
+                    No quote requests found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <ConfirmDialog
+        open={quoteToDelete !== null}
+        title="Delete quote request"
+        description="Are you sure you want to permanently delete this quote request? This action cannot be undone."
+        confirming={deleting}
+        onCancel={() => {
+          if (!deleting) {
+            setQuoteToDelete(null);
+          }
+        }}
+        onConfirm={handleDelete}
+      />
+    </>
   );
 }

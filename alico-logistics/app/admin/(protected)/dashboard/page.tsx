@@ -135,11 +135,11 @@ export default async function AdminDashboardPage() {
       <div className="mt-8">
         <QuickActions />
       </div>
-      <div className="mt-10">
+      <div className="mt-10 rounded-xl border border-slate-200 bg-white shadow-sm">
         <ContactsTable contacts={contacts} />
       </div>
 
-      <div className="mt-10">
+      <div className="mt-10 rounded-xl border border-slate-200 bg-white shadow-sm">
         <QuotesTable quotes={quoteRequests} />
       </div>
     </div>

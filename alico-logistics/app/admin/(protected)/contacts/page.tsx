@@ -1,77 +1,141 @@
-import { prisma } from "@/lib/prisma";
 import ContactsTable from "@/app/admin/components/ContactsTable";
+import PageHeader from "@/app/admin/components/ui/PageHeader";
+import Pagination from "@/app/admin/components/ui/Pagination";
+import { prisma } from "@/lib/prisma";
+
+const PAGE_SIZE = 10;
 
 export default async function ContactsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string }>;
+  searchParams: Promise<{
+    search?: string;
+    status?: string;
+    page?: string;
+  }>;
 }) {
-  const { search = "" } = await searchParams;
-  const contacts = await prisma.contact.findMany({
-  where: {
-    OR: [
-      {
-        name: {
-          contains: search,
-          mode: "insensitive",
-        },
-      },
-      {
-        email: {
-          contains: search,
-          mode: "insensitive",
-        },
-      },
-      {
-        subject: {
-          contains: search,
-          mode: "insensitive",
-        },
-      },
+  const {
+    search = "",
+    status = "",
+    page = "1",
+  } = await searchParams;
+
+  const currentPage = Math.max(
+    1,
+    Number.parseInt(page, 10) || 1
+  );
+
+  const where = {
+    AND: [
+      search
+        ? {
+            OR: [
+              {
+                name: {
+                  contains: search,
+                  mode: "insensitive" as const,
+                },
+              },
+              {
+                email: {
+                  contains: search,
+                  mode: "insensitive" as const,
+                },
+              },
+              {
+                subject: {
+                  contains: search,
+                  mode: "insensitive" as const,
+                },
+              },
+            ],
+          }
+        : {},
+      status
+        ? {
+            status,
+          }
+        : {},
     ],
-  },
-  orderBy: {
-    createdAt: "desc",
-  },
-});
+  };
+
+  const [contacts, totalContacts] = await Promise.all([
+    prisma.contact.findMany({
+      where,
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip: (currentPage - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+
+    prisma.contact.count({
+      where,
+    }),
+  ]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(totalContacts / PAGE_SIZE)
+  );
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-slate-900">
-        Contact Messages
-      </h1>
+    <div className="mx-auto max-w-7xl">
+      <PageHeader
+        title="Contact Messages"
+        description="Manage all contact form submissions."
+      />
 
-      <p className="mt-2 text-slate-600">
-        Manage all contact form submissions.
-      </p>
+      <form
+        className="mt-6 flex flex-col gap-3 sm:flex-row"
+        method="GET"
+      >
+        <input
+          type="text"
+          name="search"
+          defaultValue={search}
+          placeholder="Search by name, email, or subject"
+          className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 sm:max-w-md"
+        />
 
-    
-        <form className="mt-6 flex gap-3" method="GET">
-          <input
-            type="text"
-            name="search"
-            defaultValue={search}
-            placeholder="Search by name, email, or subject"
-            className="w-full max-w-md rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-          />
+        <select
+          name="status"
+          defaultValue={status}
+          className="rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+        >
+          <option value="">All statuses</option>
+          <option value="New">New</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Replied">Replied</option>
+          <option value="Closed">Closed</option>
+        </select>
 
-          <button
-            type="submit"
-            className="rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
+        <button
+          type="submit"
+          className="rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
+        >
+          Filter
+        </button>
+
+        {(search || status) && (
+          <a
+            href="/admin/contacts"
+            className="rounded-lg border border-slate-300 bg-white px-5 py-3 text-center font-semibold text-slate-700 transition hover:bg-slate-50"
           >
-            Search
-          </button>
+            Clear
+          </a>
+        )}
+      </form>
 
-          {search && (
-            <a
-              href="/admin/contacts"
-              className="rounded-lg border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              Clear
-            </a>
-          )}
-        </form>
-          <ContactsTable contacts={contacts} />
+      <ContactsTable contacts={contacts} />
+
+      <Pagination
+        page={currentPage}
+        totalPages={totalPages}
+        basePath="/admin/contacts"
+        search={search}
+        status={status}
+      />
     </div>
   );
 }

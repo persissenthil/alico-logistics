@@ -1,29 +1,41 @@
 import Link from "next/link";
 
+import {
+  Users,
+  FileText,
+  Settings,
+  Globe,
+  ArrowRight,
+} from "lucide-react";
+
 const actions = [
   {
     title: "Contacts",
     description: "View customer enquiries",
     href: "/admin/contacts",
     color: "bg-blue-600",
+    icon: Users,
   },
   {
     title: "Quote Requests",
     description: "Manage quotations",
     href: "/admin/quotes",
     color: "bg-orange-500",
+    icon: FileText,
   },
   {
     title: "Website Settings",
     description: "Company information",
     href: "/admin/settings",
     color: "bg-green-600",
+    icon: Settings,
   },
   {
     title: "View Website",
     description: "Open public website",
     href: "/",
     color: "bg-slate-800",
+    icon: Globe,
   },
 ];
 
@@ -35,7 +47,10 @@ export default function QuickActions() {
       </h2>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {actions.map((action) => (
+        {actions.map((action) => {
+          const Icon = action.icon;
+
+         return (
           <Link
             key={action.title}
             href={action.href}
@@ -49,7 +64,8 @@ export default function QuickActions() {
               {action.description}
             </p>
           </Link>
-        ))}
+         );
+})}
       </div>
     </div>
   );
