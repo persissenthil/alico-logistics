@@ -1,5 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type Quote = {
   id: number;
@@ -67,12 +68,21 @@ export default function QuotesTable({
               </td>
 
               <td className="px-4 py-3">
-                <button
-                  onClick={() => handleDelete(quote.id)}
-                  className="rounded bg-red-600 px-3 py-1 text-white hover:bg-red-700"
-                >
-                  Delete
-                </button>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/admin/quotes/${quote.id}`}
+                    className="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700"
+                  >
+                    View
+                  </Link>
+
+                  <button
+                    onClick={() => handleDelete(quote.id)}
+                    className="rounded bg-red-600 px-3 py-1 text-white hover:bg-red-700"
+                  >
+                    Delete
+                  </button>
+                </div>
               </td>
               </tr>
             ))}
