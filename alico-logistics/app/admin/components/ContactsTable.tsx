@@ -19,10 +19,14 @@ type Contact = {
 
 type ContactsTableProps = {
   contacts: Contact[];
+  showViewAll?: boolean;
+  title?: string;
 };
 
 export default function ContactsTable({
   contacts,
+  showViewAll = false,
+  title = "Recent Contact Messages",
 }: ContactsTableProps) {
   const router = useRouter();
 
@@ -97,11 +101,21 @@ export default function ContactsTable({
   return (
     <>
       <section className="mt-10 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-6 py-5">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
           <h2 className="text-xl font-semibold text-slate-900">
-            Recent Contact Messages
+             {title}
           </h2>
+
+          {showViewAll && (
+            <Link
+              href="/admin/contacts"
+              className="text-sm font-semibold text-blue-600 transition hover:text-blue-700"
+            >
+              View All →
+            </Link>
+          )}
         </div>
+
 
         <div className="overflow-x-auto">
           <table className="min-w-full">
@@ -220,7 +234,7 @@ export default function ContactsTable({
         open={contactToDelete !== null}
         title="Delete contact"
         description="Are you sure you want to permanently delete this contact message? This action cannot be undone."
-       confirming={deleting}
+        confirming={deleting}
         onCancel={() => {
           if (!deleting) {
             setContactToDelete(null);

@@ -2,6 +2,7 @@ import ContactsTable from "@/app/admin/components/ContactsTable";
 import PageHeader from "@/app/admin/components/ui/PageHeader";
 import Pagination from "@/app/admin/components/ui/Pagination";
 import { prisma } from "@/lib/prisma";
+import { Download } from "lucide-react";
 
 const PAGE_SIZE = 10;
 
@@ -86,7 +87,7 @@ export default async function ContactsPage({
         description="Manage all contact form submissions."
       />
 
-      <form
+    <form
         className="mt-6 flex flex-col gap-3 sm:flex-row"
         method="GET"
       >
@@ -117,6 +118,14 @@ export default async function ContactsPage({
           Filter
         </button>
 
+        <a
+            href="/api/admin/contacts/export"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-5 py-3 font-semibold text-white transition hover:bg-slate-800"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+        </a>
+
         {(search || status) && (
           <a
             href="/admin/contacts"
@@ -127,15 +136,20 @@ export default async function ContactsPage({
         )}
       </form>
 
-      <ContactsTable contacts={contacts} />
-
-      <Pagination
-        page={currentPage}
-        totalPages={totalPages}
-        basePath="/admin/contacts"
-        search={search}
-        status={status}
+      <ContactsTable 
+           contacts={contacts} 
+           title="All Contact Messages"
       />
+
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            totalItems={totalContacts}
+            pageSize={PAGE_SIZE}
+            basePath="/admin/contacts"
+            search={search}
+            status={status}
+          />
     </div>
   );
 }

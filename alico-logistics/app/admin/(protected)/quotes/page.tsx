@@ -2,6 +2,7 @@ import QuotesTable from "@/app/admin/components/QuotesTable";
 import PageHeader from "@/app/admin/components/ui/PageHeader";
 import Pagination from "@/app/admin/components/ui/Pagination";
 import { prisma } from "@/lib/prisma";
+import { Download } from "lucide-react";
 
 const PAGE_SIZE = 10;
 
@@ -128,7 +129,13 @@ export default async function QuotesPage({
         >
           Filter
         </button>
-
+        <a
+          href="/api/admin/quotes/export"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-5 py-3 font-semibold text-white transition hover:bg-slate-800"
+        >
+          <Download className="h-4 w-4" />
+          Export CSV
+        </a>
         {(search || status) && (
           <a
             href="/admin/quotes"
@@ -139,11 +146,16 @@ export default async function QuotesPage({
         )}
       </form>
 
-      <QuotesTable quotes={quoteRequests} />
+      <QuotesTable 
+          quotes={quoteRequests}
+          title="All Quote Requests"
+      />
 
       <Pagination
         page={currentPage}
         totalPages={totalPages}
+        totalItems={totalQuotes}
+        pageSize={PAGE_SIZE}
         basePath="/admin/quotes"
         search={search}
         status={status}

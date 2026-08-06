@@ -21,10 +21,14 @@ type Quote = {
 
 type QuotesTableProps = {
   quotes: Quote[];
+  showViewAll?: boolean;
+  title?: string;
 };
 
 export default function QuotesTable({
   quotes,
+  showViewAll = false,
+  title = "Recent Quote Requests",
 }: QuotesTableProps) {
   const router = useRouter();
 
@@ -99,10 +103,18 @@ export default function QuotesTable({
   return (
     <>
       <section className="mt-10 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-6 py-5">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
           <h2 className="text-xl font-semibold text-slate-900">
-            Recent Quote Requests
+            {title}
           </h2>
+           {showViewAll && (
+          <Link
+            href="/admin/quotes"
+            className="text-sm font-semibold text-blue-600 transition hover:text-blue-700"
+          >
+            View All →
+          </Link>
+           )}
         </div>
 
         <div className="overflow-x-auto">

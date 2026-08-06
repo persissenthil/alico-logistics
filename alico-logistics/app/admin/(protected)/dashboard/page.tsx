@@ -12,6 +12,7 @@ import PageHeader from "@/app/admin/components/ui/PageHeader";
 import StatCard from "@/app/admin/components/ui/StatCard";
 
 import QuickActions from "@/app/admin/components/ui/QuickActions";
+import MonthlyChart from "@/app/admin/components/ui/MonthlyChart";
 
 import {
   Users,
@@ -19,6 +20,35 @@ import {
   CalendarDays,
   Clock3,
 } from "lucide-react";
+
+function getMonthlyData<T extends { createdAt: Date }>(items: T[]) {
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  const totals = new Array(12).fill(0);
+
+  for (const item of items) {
+    const month = item.createdAt.getMonth();
+    totals[month]++;
+  }
+
+  return months.map((month, index) => ({
+    month,
+    total: totals[index],
+  }));
+}
 
 export default async function AdminDashboardPage() {
   const cookieStore = await cookies();
@@ -38,59 +68,93 @@ export default async function AdminDashboardPage() {
   today.setHours(0, 0, 0, 0);
 
   const [
-    contacts,
-    quoteRequests,
-    contactsToday,
-    quotesToday,
-    newContacts,
-    newQuotes,
-  ] = await Promise.all([
-    prisma.contact.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: 5,
-    }),
+  contacts,
+  quoteRequests,
+  contactsToday,
+  quotesToday,
+  newContacts,
+  newQuotes,
+  contactDates,
+  quoteDates,
+] = await Promise.all([
+  prisma.contact.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 5,
+  }),
 
-    prisma.quoteRequest.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: 5,
-    }),
+  prisma.quoteRequest.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 5,
+  }),
 
-    prisma.contact.count({
-      where: {
-        createdAt: {
-          gte: today,
-        },
+  prisma.contact.count({
+    where: {
+      createdAt: {
+        gte: today,
       },
-    }),
+    },
+  }),
 
-    prisma.quoteRequest.count({
-      where: {
-        createdAt: {
-          gte: today,
-        },
+  prisma.quoteRequest.count({
+    where: {
+      createdAt: {
+        gte: today,
       },
-    }),
+    },
+  }),
 
-    prisma.contact.count({
-      where: {
-        status: "New",
-      },
-    }),
+  prisma.contact.count({
+    where: {
+      status: "New",
+    },
+  }),
 
-    prisma.quoteRequest.count({
-      where: {
-        status: "New",
-      },
-    }),
-  ]);
+  prisma.quoteRequest.count({
+    where: {
+      status: "New",
+    },
+  }),
+
+  prisma.contact.findMany({
+    select: {
+      createdAt: true,
+    },
+  }),
+
+  prisma.quoteRequest.findMany({
+    select: {
+      createdAt: true,
+    },
+  }),
+]);
 
   const totalContacts = await prisma.contact.count();
   const totalQuotes = await prisma.quoteRequest.count();
 
+  /*const contactsChartData = [
+  { month: "Jan", total: 12 },
+  { month: "Feb", total: 18 },
+  { month: "Mar", total: 9 },
+  { month: "Apr", total: 25 },
+  { month: "May", total: 16 },
+  { month: "Jun", total: 22 },
+];
+
+const quotesChartData = [
+  { month: "Jan", total: 8 },
+  { month: "Feb", total: 14 },
+  { month: "Mar", total: 11 },
+  { month: "Apr", total: 20 },
+  { month: "May", total: 15 },
+  { month: "Jun", total: 19 },
+]; */
+
+const contactsChartData = getMonthlyData(contactDates);
+const quotesChartData = getMonthlyData(quoteDates);
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
@@ -132,16 +196,31 @@ export default async function AdminDashboardPage() {
           iconBg="bg-purple-600"
         />
       </div>
+      
       <div className="mt-8">
         <QuickActions />
       </div>
-      <div className="mt-10 rounded-xl border border-slate-200 bg-white shadow-sm">
-        <ContactsTable contacts={contacts} />
-      </div>
 
-      <div className="mt-10 rounded-xl border border-slate-200 bg-white shadow-sm">
-        <QuotesTable quotes={quoteRequests} />
+        <div className="mt-10 grid gap-6 lg:grid-cols-2">
+        <MonthlyChart
+          title="Contacts by Month"
+          data={contactsChartData}
+        />
+
+        <MonthlyChart
+          title="Quote Requests by Month"
+          data={quotesChartData}
+        />
       </div>
+        <ContactsTable
+          contacts={contacts}
+          showViewAll
+        />
+
+      <QuotesTable 
+        quotes={quoteRequests}
+        showViewAll
+        />
     </div>
   );
 }
