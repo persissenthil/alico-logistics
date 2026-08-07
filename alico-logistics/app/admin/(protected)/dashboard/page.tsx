@@ -13,6 +13,8 @@ import StatCard from "@/app/admin/components/ui/StatCard";
 
 import QuickActions from "@/app/admin/components/ui/QuickActions";
 import MonthlyChart from "@/app/admin/components/ui/MonthlyChart";
+import RecentActivity from "@/app/admin/components/ui/RecentActivity";
+import PeriodStatCard from "@/app/admin/components/ui/PeriodStatCard";
 
 import {
   Users,
@@ -64,8 +66,20 @@ export default async function AdminDashboardPage() {
     redirect("/admin/login");
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+const now = new Date();
+
+const today = new Date(now);
+today.setHours(0, 0, 0, 0);
+
+const startOfWeek = new Date(now);
+startOfWeek.setDate(now.getDate() - now.getDay());
+startOfWeek.setHours(0, 0, 0, 0);
+
+const startOfMonth = new Date(
+  now.getFullYear(),
+  now.getMonth(),
+  1
+);
 
   const [
   contacts,
@@ -76,6 +90,10 @@ export default async function AdminDashboardPage() {
   newQuotes,
   contactDates,
   quoteDates,
+  contactsThisWeek,
+  contactsThisMonth,
+  quotesThisWeek,
+  quotesThisMonth,
 ] = await Promise.all([
   prisma.contact.findMany({
     orderBy: {
@@ -130,6 +148,37 @@ export default async function AdminDashboardPage() {
       createdAt: true,
     },
   }),
+  prisma.contact.count({
+  where: {
+    createdAt: {
+      gte: startOfWeek,
+    },
+  },
+}),
+
+prisma.contact.count({
+  where: {
+    createdAt: {
+      gte: startOfMonth,
+    },
+  },
+}),
+
+prisma.quoteRequest.count({
+  where: {
+    createdAt: {
+      gte: startOfWeek,
+    },
+  },
+}),
+
+prisma.quoteRequest.count({
+  where: {
+    createdAt: {
+      gte: startOfMonth,
+    },
+  },
+}),
 ]);
 
   const totalContacts = await prisma.contact.count();
@@ -155,6 +204,28 @@ const quotesChartData = [
 
 const contactsChartData = getMonthlyData(contactDates);
 const quotesChartData = getMonthlyData(quoteDates);
+
+const activities = [
+  ...contacts.map((contact) => ({
+    id: contact.id,
+    type: "contact" as const,
+    name: contact.name,
+    createdAt: contact.createdAt,
+  })),
+
+  ...quoteRequests.map((quote) => ({
+    id: quote.id,
+    type: "quote" as const,
+    name: quote.fullName,
+    createdAt: quote.createdAt,
+  })),
+]
+  .sort(
+    (a, b) =>
+      b.createdAt.getTime() - a.createdAt.getTime()
+  )
+  .slice(0, 8);
+
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
@@ -164,34 +235,42 @@ const quotesChartData = getMonthlyData(quoteDates);
         <LogoutButton />
       </PageHeader>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          title="Total Contacts"
-          value={totalContacts}
-          subtitle={`${newContacts} currently new`}
-          icon={<Users className="h-6 w-6 text-white" />}
-          iconBg="bg-blue-600"
-        />
+      <StatCard
+        title="Total Contacts"
+        value={totalContacts}
+        icon={<Users className="h-6 w-6 text-white" />}
+        iconBg="bg-blue-600"
+        metricOneLabel="New"
+        metricOneValue={newContacts}
+        metricTwoLabel="Today"
+        metricTwoValue={contactsToday}
+      />
 
         <StatCard
-          title="Quote Requests"
-          value={totalQuotes}
-          subtitle={`${newQuotes} currently new`}
-          icon={<FileText className="h-6 w-6 text-white" />}
-          iconBg="bg-orange-500"
-        />
+        title="Quote Requests"
+        value={totalQuotes}
+        icon={<FileText className="h-6 w-6 text-white" />}
+        iconBg="bg-orange-500"
+        metricOneLabel="New"
+        metricOneValue={newQuotes}
+        metricTwoLabel="Today"
+        metricTwoValue={quotesToday}
+      />
 
-        <StatCard
-          title="Contacts Today"
-          value={contactsToday}
-          subtitle="Received since midnight"
+          <PeriodStatCard
+          title="Contacts"
+          today={contactsToday}
+          week={contactsThisWeek}
+          month={contactsThisMonth}
           icon={<CalendarDays className="h-6 w-6 text-white" />}
           iconBg="bg-green-600"
         />
 
-        <StatCard
-          title="Quotes Today"
-          value={quotesToday}
-          subtitle="Received since midnight"
+        <PeriodStatCard
+          title="Quote Requests"
+          today={quotesToday}
+          week={quotesThisWeek}
+          month={quotesThisMonth}
           icon={<Clock3 className="h-6 w-6 text-white" />}
           iconBg="bg-purple-600"
         />
@@ -212,6 +291,11 @@ const quotesChartData = getMonthlyData(quoteDates);
           data={quotesChartData}
         />
       </div>
+
+      <div className="mt-10">
+        <RecentActivity activities={activities} />
+      </div>
+
         <ContactsTable
           contacts={contacts}
           showViewAll

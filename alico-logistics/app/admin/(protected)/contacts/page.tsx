@@ -13,18 +13,37 @@ export default async function ContactsPage({
     search?: string;
     status?: string;
     page?: string;
+    sort?: string;
+    order?: string;
   }>;
 }) {
   const {
     search = "",
     status = "",
     page = "1",
+    sort = "createdAt",
+    order = "desc",
   } = await searchParams;
 
   const currentPage = Math.max(
     1,
     Number.parseInt(page, 10) || 1
   );
+
+  const sortOrder =
+  order === "asc" ? "asc" : "desc";
+
+const allowedSortFields = [
+  "name",
+  "email",
+  "subject",
+  "status",
+  "createdAt",
+];
+
+const sortField = allowedSortFields.includes(sort)
+  ? sort
+  : "createdAt";
 
   const where = {
     AND: [
@@ -64,7 +83,7 @@ export default async function ContactsPage({
     prisma.contact.findMany({
       where,
       orderBy: {
-        createdAt: "desc",
+         [sortField]: sortOrder,
       },
       skip: (currentPage - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
@@ -141,15 +160,20 @@ export default async function ContactsPage({
            title="All Contact Messages"
       />
 
-          <Pagination
-            page={currentPage}
-            totalPages={totalPages}
-            totalItems={totalContacts}
-            pageSize={PAGE_SIZE}
-            basePath="/admin/contacts"
-            search={search}
-            status={status}
-          />
+      <Pagination
+        page={currentPage}
+        totalPages={totalPages}
+        totalItems={totalContacts}
+        pageSize={PAGE_SIZE}
+        basePath="/admin/contacts"
+        query={{
+          search,
+          status,
+          sort,
+          order,
+        }}
+        itemLabel="contacts"
+      />
     </div>
   );
 }

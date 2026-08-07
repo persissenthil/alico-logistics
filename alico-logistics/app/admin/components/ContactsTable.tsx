@@ -1,9 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import { useState } from "react";
-import { Eye, Trash2 } from "lucide-react";
+import {
+  Eye,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import ConfirmDialog from "@/app/admin/components/ui/ConfirmDialog";
@@ -29,11 +38,54 @@ export default function ContactsTable({
   title = "Recent Contact Messages",
 }: ContactsTableProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [contactToDelete, setContactToDelete] =
     useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  function createSortUrl(field: string) {
+  const params = new URLSearchParams(
+    searchParams.toString()
+  );
+
+  const currentSort =
+    params.get("sort") ?? "createdAt";
+
+  const currentOrder =
+    params.get("order") ?? "desc";
+
+  const nextOrder =
+    currentSort === field && currentOrder === "asc"
+      ? "desc"
+      : "asc";
+
+  params.set("sort", field);
+  params.set("order", nextOrder);
+  params.set("page", "1");
+
+  return `/admin/contacts?${params.toString()}`;
+}
+
+    function getSortIcon(field: string) {
+      const currentSort =
+        searchParams.get("sort") ?? "createdAt";
+
+      const currentOrder =
+        searchParams.get("order") ?? "desc";
+
+      if (currentSort !== field) {
+        return (
+          <ArrowUpDown className="h-4 w-4 text-slate-400" />
+        );
+      }
+
+      return currentOrder === "asc" ? (
+        <ArrowUp className="h-4 w-4 text-blue-600" />
+      ) : (
+        <ArrowDown className="h-4 w-4 text-blue-600" />
+      );
+    }
   async function handleDelete() {
     if (contactToDelete === null) return;
 
@@ -119,22 +171,64 @@ export default function ContactsTable({
 
         <div className="overflow-x-auto">
           <table className="min-w-full">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-4 py-3 text-left">Name</th>
-                <th className="px-4 py-3 text-left">Email</th>
-                <th className="px-4 py-3 text-left">
-                  Subject
-                </th>
-                <th className="px-4 py-3 text-left">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-left">Date</th>
-                <th className="px-4 py-3 text-left">
-                  Actions
-                </th>
-              </tr>
-            </thead>
+
+        <thead className="bg-slate-50">
+          <tr>
+            <th className="px-4 py-3 text-left">
+              <Link
+                href={createSortUrl("name")}
+                className="inline-flex items-center gap-1 font-semibold transition hover:text-blue-600"
+              >
+                Name
+                {getSortIcon("name")}
+              </Link>
+            </th>
+
+            <th className="px-4 py-3 text-left">
+              <Link
+                href={createSortUrl("email")}
+                className="inline-flex items-center gap-1 font-semibold transition hover:text-blue-600"
+              >
+                Email
+                {getSortIcon("email")}
+              </Link>
+            </th>
+
+            <th className="px-4 py-3 text-left">
+              <Link
+                href={createSortUrl("subject")}
+                className="inline-flex items-center gap-1 font-semibold transition hover:text-blue-600"
+              >
+                Subject
+                {getSortIcon("subject")}
+              </Link>
+            </th>
+
+            <th className="px-4 py-3 text-left">
+              <Link
+                href={createSortUrl("status")}
+                className="inline-flex items-center gap-1 font-semibold transition hover:text-blue-600"
+              >
+                Status
+                {getSortIcon("status")}
+              </Link>
+            </th>
+
+            <th className="px-4 py-3 text-left">
+              <Link
+                href={createSortUrl("createdAt")}
+                className="inline-flex items-center gap-1 font-semibold transition hover:text-blue-600"
+              >
+                Date
+                {getSortIcon("createdAt")}
+              </Link>
+            </th>
+
+            <th className="px-4 py-3 text-left">
+              Actions
+            </th>
+          </tr>
+        </thead>
 
             <tbody>
               {contacts.map((contact) => (

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getSettings } from "@/lib/settings";
 import { verifySessionToken } from "@/lib/session";
 import Sidebar from "@/app/admin/components/Sidebar";
+import { prisma } from "@/lib/prisma";
 
 export default async function ProtectedAdminLayout({
   children,
@@ -26,11 +27,28 @@ export default async function ProtectedAdminLayout({
 
   const settings = await getSettings();
 
+const [newContacts, newQuotes] = await Promise.all([
+  prisma.contact.count({
+    where: {
+      status: "New",
+    },
+  }),
+
+  prisma.quoteRequest.count({
+    where: {
+      status: "New",
+    },
+  }),
+]);
+
+
   return (
     <div className="flex h-screen bg-slate-100">
       <Sidebar
         companyName={settings.companyName}
         logoUrl={settings.logoUrl}
+        newContacts={newContacts}
+        newQuotes={newQuotes}
       />
 
       <main className="flex-1 overflow-y-auto p-10">

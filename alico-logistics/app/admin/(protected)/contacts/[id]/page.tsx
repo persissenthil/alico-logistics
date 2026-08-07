@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ContactReplyForm from "@/app/admin/components/ContactReplyForm";
 import { prisma } from "@/lib/prisma";
+import { formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 
 type ContactDetailsPageProps = {
   params: Promise<{
@@ -79,24 +81,59 @@ export default async function ContactDetailsPage({
             </p>
           </div>
 
-          <div>
-            <p className="text-sm font-medium text-slate-500">
-              Date received
-            </p>
-            <p className="mt-1 text-lg text-slate-900">
-              {contact.createdAt.toLocaleString()}
-            </p>
-          </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">
+                  Date received
+                </p>
+
+                <p className="mt-1 text-lg font-semibold text-slate-900">
+                  {formatDistanceToNow(contact.createdAt, {
+                    addSuffix: true,
+                  })}
+                </p>
+
+                <p
+                  className="text-sm text-slate-500"
+                  title={contact.createdAt.toLocaleString()}
+                >
+                  {format(contact.createdAt, "dd MMM yyyy • h:mm a")}
+                </p>
+
+              </div>
+
         </div>
 
-        <div className="mt-8">
-          <p className="text-sm font-medium text-slate-500">
-            Subject
-          </p>
-          <p className="mt-1 text-lg text-slate-900">
-            {contact.subject || "-"}
-          </p>
-        </div>
+<div className="mt-8 grid gap-6 md:grid-cols-2">
+  <div>
+    <p className="text-sm font-medium text-slate-500">
+      Subject
+    </p>
+
+    <p className="mt-1 text-lg text-slate-900">
+      {contact.subject || "-"}
+    </p>
+  </div>
+
+    <div>
+      <p className="text-sm font-medium text-slate-500">
+        Status
+      </p>
+
+      <span
+        className={`mt-2 inline-flex rounded-full px-3 py-1 text-sm font-semibold ${
+          contact.status === "New"
+            ? "bg-green-100 text-green-700"
+            : contact.status === "In Progress"
+              ? "bg-yellow-100 text-yellow-700"
+              : contact.status === "Replied"
+                ? "bg-blue-100 text-blue-700"
+                : "bg-slate-200 text-slate-700"
+        }`}
+      >
+        {contact.status}
+      </span>
+    </div>
+  </div>
 
         <div className="mt-8">
           <p className="text-sm font-medium text-slate-500">

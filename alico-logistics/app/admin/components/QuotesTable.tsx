@@ -1,12 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import { useState } from "react";
-import { Eye, Trash2 } from "lucide-react";
+import {
+  Eye,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import ConfirmDialog from "@/app/admin/components/ui/ConfirmDialog";
+import { formatDistanceToNow, format } from "date-fns";
 
 type Quote = {
   id: number;
@@ -31,10 +41,54 @@ export default function QuotesTable({
   title = "Recent Quote Requests",
 }: QuotesTableProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [quoteToDelete, setQuoteToDelete] =
     useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  function createSortUrl(field: string) {
+  const params = new URLSearchParams(
+    searchParams.toString()
+  );
+
+  const currentSort =
+    params.get("sort") ?? "createdAt";
+
+  const currentOrder =
+    params.get("order") ?? "desc";
+
+  const nextOrder =
+    currentSort === field && currentOrder === "asc"
+      ? "desc"
+      : "asc";
+
+  params.set("sort", field);
+  params.set("order", nextOrder);
+  params.set("page", "1");
+
+  return `/admin/quotes?${params.toString()}`;
+}
+
+function getSortIcon(field: string) {
+  const currentSort =
+    searchParams.get("sort") ?? "createdAt";
+
+  const currentOrder =
+    searchParams.get("order") ?? "desc";
+
+  if (currentSort !== field) {
+    return (
+      <ArrowUpDown className="h-4 w-4 text-slate-400" />
+    );
+  }
+
+  return currentOrder === "asc" ? (
+    <ArrowUp className="h-4 w-4 text-blue-600" />
+  ) : (
+    <ArrowDown className="h-4 w-4 text-blue-600" />
+  );
+}
 
   async function handleDelete() {
     if (quoteToDelete === null) return;
@@ -119,29 +173,63 @@ export default function QuotesTable({
 
         <div className="overflow-x-auto">
           <table className="min-w-full">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-4 py-3 text-left">
+          <thead className="bg-slate-50">
+            <tr>
+              <th className="px-4 py-3 text-left">
+                <Link
+                  href={createSortUrl("fullName")}
+                  className="inline-flex items-center gap-1 font-semibold transition hover:text-blue-600"
+                >
                   Name
-                </th>
-                <th className="px-4 py-3 text-left">
-                  Service
-                </th>
-                <th className="px-4 py-3 text-left">
-                  Route
-                </th>
-                <th className="px-4 py-3 text-left">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-left">
-                  Date
-                </th>
-                <th className="px-4 py-3 text-left">
-                  Actions
-                </th>
-              </tr>
-            </thead>
+                  {getSortIcon("fullName")}
+                </Link>
+              </th>
 
+              <th className="px-4 py-3 text-left">
+                <Link
+                  href={createSortUrl("service")}
+                  className="inline-flex items-center gap-1 font-semibold transition hover:text-blue-600"
+                >
+                  Service
+                  {getSortIcon("service")}
+                </Link>
+              </th>
+
+              <th className="px-4 py-3 text-left">
+                <Link
+                  href={createSortUrl("origin")}
+                  className="inline-flex items-center gap-1 font-semibold transition hover:text-blue-600"
+                >
+                  Route
+                  {getSortIcon("origin")}
+                </Link>
+              </th>
+
+              <th className="px-4 py-3 text-left">
+                <Link
+                  href={createSortUrl("status")}
+                  className="inline-flex items-center gap-1 font-semibold transition hover:text-blue-600"
+                >
+                  Status
+                  {getSortIcon("status")}
+                </Link>
+              </th>
+
+              <th className="px-4 py-3 text-left">
+                <Link
+                  href={createSortUrl("createdAt")}
+                  className="inline-flex items-center gap-1 font-semibold transition hover:text-blue-600"
+                >
+                  Date
+                  {getSortIcon("createdAt")}
+                </Link>
+              </th>
+
+              <th className="px-4 py-3 text-left">
+                Actions
+              </th>
+            </tr>
+          </thead>
             <tbody>
               {quotes.map((quote) => (
                 <tr
@@ -192,10 +280,17 @@ export default function QuotesTable({
                     </select>
                   </td>
 
-                  <td className="px-4 py-3">
-                    {quote.createdAt.toLocaleDateString()}
-                  </td>
+                <td className="px-4 py-3">
+                  <div className="font-medium">
+                    {formatDistanceToNow(quote.createdAt, {
+                      addSuffix: true,
+                    })}
+                  </div>
 
+                  <div className="text-xs text-slate-500">
+                    {format(quote.createdAt, "dd MMM yyyy")}
+                  </div>
+                </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <Link

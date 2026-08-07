@@ -13,18 +13,36 @@ export default async function QuotesPage({
     search?: string;
     status?: string;
     page?: string;
+    sort?: string;
+    order?: string;
   }>;
 }) {
   const {
     search = "",
     status = "",
     page = "1",
+    sort = "createdAt",
+    order = "desc",
   } = await searchParams;
 
   const currentPage = Math.max(
     1,
     Number.parseInt(page, 10) || 1
   );
+  const sortOrder =
+  order === "asc" ? "asc" : "desc";
+
+const allowedSortFields = [
+  "fullName",
+  "service",
+  "origin",
+  "status",
+  "createdAt",
+];
+
+const sortField = allowedSortFields.includes(sort)
+  ? sort
+  : "createdAt";
 
   const where = {
     AND: [
@@ -76,7 +94,7 @@ export default async function QuotesPage({
     prisma.quoteRequest.findMany({
       where,
       orderBy: {
-        createdAt: "desc",
+         [sortField]: sortOrder,
       },
       skip: (currentPage - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
@@ -150,16 +168,21 @@ export default async function QuotesPage({
           quotes={quoteRequests}
           title="All Quote Requests"
       />
-
       <Pagination
         page={currentPage}
         totalPages={totalPages}
         totalItems={totalQuotes}
         pageSize={PAGE_SIZE}
         basePath="/admin/quotes"
-        search={search}
-        status={status}
+        query={{
+          search,
+          status,
+          sort,
+          order,
+        }}
+        itemLabel="quote requests"
       />
+ 
     </div>
   );
 }
