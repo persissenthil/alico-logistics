@@ -13,14 +13,14 @@ const allowedTypes = [
   "image/png",
   "image/jpeg",
   "image/webp",
-  "image/svg+xml",
+  
 ];
 
 const extensionByType: Record<string, string> = {
   "image/png": "png",
   "image/jpeg": "jpg",
   "image/webp": "webp",
-  "image/svg+xml": "svg",
+  
 };
 
 export async function POST(request: Request) {
@@ -54,11 +54,17 @@ export async function POST(request: Request) {
       );
     }
 
+    if (file.size === 0) {
+  return NextResponse.json(
+    { message: "The selected logo file is empty." },
+    { status: 400 }
+  );
+ }
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         {
           message:
-            "Only PNG, JPG, WebP, and SVG images are allowed.",
+            "Only PNG, JPG, and WebP images are allowed.",
         },
         { status: 400 }
       );

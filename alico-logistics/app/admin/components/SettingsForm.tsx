@@ -30,6 +30,8 @@ export default function SettingsForm({
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] =
+  useState<File | null>(null);
 
   async function handleLogoUpload() {
     const file = fileInputRef.current?.files?.[0];
@@ -39,6 +41,29 @@ export default function SettingsForm({
       return;
     }
 
+    const allowedTypes = [
+        "image/png",
+        "image/jpeg",
+        "image/webp",
+        "image/svg+xml",
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(
+          "Please upload a PNG, JPG, WebP or SVG file."
+        );
+        return;
+      }
+
+      const maxFileSize = 2 * 1024 * 1024;
+
+      if (file.size > maxFileSize) {
+        toast.error(
+          "Logo file size must be 2 MB or smaller."
+        );
+        return;
+      }
+    
     const formData = new FormData();
     formData.append("logo", file);
 
@@ -71,7 +96,7 @@ export default function SettingsForm({
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-
+     setSelectedFile(null);
      toast.success("Logo uploaded successfully.");
     } catch (error) {
       toast.error(
@@ -84,12 +109,63 @@ export default function SettingsForm({
     }
   }
 
-  async function handleSubmit(
-    event: React.FormEvent<HTMLFormElement>
-  ) {
-    event.preventDefault();
+async function handleSubmit(
+  event: React.FormEvent<HTMLFormElement>
+) {
+  event.preventDefault();
 
-    setSaving(true);
+  const companyName = settings.companyName.trim();
+  const email = settings.email.trim();
+  const phone = settings.phone.trim();
+
+  if (!companyName) {
+    toast.error("Company name is required.");
+    return;
+  }
+
+  if (!email) {
+    toast.error("Email is required.");
+    return;
+  }
+
+  const emailPattern =
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailPattern.test(email)) {
+    toast.error("Please enter a valid email address.");
+    return;
+  }
+  const phonePattern =
+  /^(?:\+44|0)[0-9\s()-]+$/;
+
+if (phone && !phonePattern.test(phone)) {
+  toast.error(
+    "Please enter a valid UK phone number starting with +44 or 0."
+  );
+  return;
+}
+
+const phoneDigits = phone.replace(/\D/g, "");
+
+if (phone && phoneDigits.length < 10) {
+  toast.error("Please enter a valid UK phone number.");
+  return;
+}
+
+/*const phonePattern = /^\+?[0-9\s()-]+$/;
+
+if (phone && !phonePattern.test(phone)) {
+  toast.error(
+    "Phone number can only contain numbers, spaces, +, -, ( and )."
+  );
+  return;
+}
+
+if (phone && phone.replace(/\D/g, "").length < 7) {
+  toast.error("Please enter a valid phone number.");
+  return;
+}*/
+  setSaving(true);
 
     try {
       const response = await fetch(
@@ -99,7 +175,12 @@ export default function SettingsForm({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(settings),
+          body: JSON.stringify({
+            ...settings,
+            companyName,
+            email,
+            phone,
+          }),
         }
       );
 
@@ -154,8 +235,12 @@ export default function SettingsForm({
           type="file"
           accept=".png,.jpg,.jpeg,.webp,.svg"
           disabled={uploading}
+          onChange={(event) => {
+            const file = event.target.files?.[0] ?? null;
+            setSelectedFile(file);
+          }}
           className="mb-4 block w-full rounded-lg border border-slate-300 bg-white p-3 text-sm"
-        />
+        />        
 
         <p className="mb-4 text-sm text-slate-500">
           PNG, JPG, WebP or SVG. Maximum file size: 2 MB.
@@ -164,56 +249,62 @@ export default function SettingsForm({
         <button
           type="button"
           onClick={handleLogoUpload}
-          disabled={uploading}
+          disabled={uploading || !selectedFile}
           className="rounded-lg bg-slate-900 px-5 py-2 font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {uploading ? "Uploading..." : "Upload Logo"}
         </button>
       </div>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <FormInput
-          id="companyName"
-          label="Company Name"
-          required
-          value={settings.companyName}
-          onChange={(event) =>
-            setSettings({
-              ...settings,
-              companyName: event.target.value,
-            })
-          }
-        />
+<div className="rounded-xl border border-slate-200 bg-white p-6">
+  <h2 className="mb-5 text-lg font-semibold text-slate-900">
+    Company Information
+  </h2>
 
-        <FormInput
-          id="companyEmail"
-          label="Email"
-          type="email"
-          required
-          value={settings.email}
-          onChange={(event) =>
-            setSettings({
-              ...settings,
-              email: event.target.value,
-            })
-          }
-        />
+  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+    <FormInput
+      id="companyName"
+      label="Company Name"
+      required
+      value={settings.companyName}
+      onChange={(event) =>
+        setSettings({
+          ...settings,
+          companyName: event.target.value,
+        })
+      }
+    />
 
-        <div className="md:col-span-2">
-          <FormInput
-            id="companyPhone"
-            label="Phone"
-            type="tel"
-            value={settings.phone}
-            onChange={(event) =>
-              setSettings({
-                ...settings,
-                phone: event.target.value,
-              })
-            }
-          />
-        </div>
-      </div>
-        <FormTextarea
+    <FormInput
+      id="companyEmail"
+      label="Email"
+      type="email"
+      required
+      value={settings.email}
+      onChange={(event) =>
+        setSettings({
+          ...settings,
+          email: event.target.value,
+        })
+      }
+    />
+
+    <div className="md:col-span-2">
+      <FormInput
+        id="companyPhone"
+        label="Phone"
+        type="tel"
+        value={settings.phone}
+        onChange={(event) =>
+          setSettings({
+            ...settings,
+            phone: event.target.value,
+          })
+        }
+      />
+    </div>
+
+    <div className="md:col-span-2">
+      <FormTextarea
         id="companyAddress"
         label="Address"
         rows={4}
@@ -225,7 +316,9 @@ export default function SettingsForm({
           })
         }
       />
-
+    </div>
+  </div>
+</div>
       <button
         type="submit"
         disabled={saving || uploading}

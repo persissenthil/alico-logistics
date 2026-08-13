@@ -1,24 +1,37 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-export const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: false, // Use STARTTLS on port 587
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+function getRequiredEnv(name: string) {
+  const value = process.env[name];
+
+  if (!value) {
+    throw new Error(`${name} is not defined.`);
+  }
+
+  return value;
+}
+
+const apiKey = getRequiredEnv("RESEND_API_KEY");
+const fromEmail = getRequiredEnv("RESEND_FROM_EMAIL");
+
+const resend = new Resend(apiKey);
 
 export async function sendEmail(
   to: string,
   subject: string,
   html: string
 ) {
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM,
-    to,
+  const { data, error } = await resend.emails.send({
+    from: fromEmail,
+    to: [to],
     subject,
     html,
   });
+
+  if (error) {
+    throw new Error(
+      error.message || "Unable to send email."
+    );
+  }
+
+  return data;
 }

@@ -59,37 +59,147 @@ export async function POST(request: Request) {
       );
     }
 
-    const validEntries: Array<[string, string]> = [];
+    const companyName =
+      typeof body.companyName === "string"
+        ? body.companyName.trim()
+        : "";
 
-    for (const [key, value] of Object.entries(body)) {
-      if (
-        !key.trim() ||
-        typeof value !== "string" ||
-        value.length > 5000
-      ) {
+    const email =
+      typeof body.email === "string"
+        ? body.email.trim()
+        : "";
+
+    const phone =
+      typeof body.phone === "string"
+        ? body.phone.trim()
+        : "";
+
+    const address =
+      typeof body.address === "string"
+        ? body.address.trim()
+        : "";
+
+    const logoUrl =
+      typeof body.logoUrl === "string"
+        ? body.logoUrl.trim()
+        : "";
+
+    // Company name
+    if (!companyName) {
+      return NextResponse.json(
+        { message: "Company name is required." },
+        { status: 400 }
+      );
+    }
+
+    if (companyName.length > 150) {
+      return NextResponse.json(
+        {
+          message:
+            "Company name must be 150 characters or fewer.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Email
+    if (!email) {
+      return NextResponse.json(
+        { message: "Email is required." },
+        { status: 400 }
+      );
+    }
+
+    const emailPattern =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(email)) {
+      return NextResponse.json(
+        {
+          message:
+            "Please enter a valid email address.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (email.length > 254) {
+      return NextResponse.json(
+        { message: "Email address is too long." },
+        { status: 400 }
+      );
+    }
+
+    // UK phone number
+    if (phone) {
+      const phonePattern =
+        /^(?:\+44|0)[0-9\s()-]+$/;
+
+      if (!phonePattern.test(phone)) {
         return NextResponse.json(
-          { message: `Invalid value for ${key}.` },
+          {
+            message:
+              "Please enter a valid UK phone number starting with +44 or 0.",
+          },
           { status: 400 }
         );
       }
 
-      validEntries.push([key, value]);
+      const phoneDigits = phone.replace(/\D/g, "");
+
+      if (phoneDigits.length < 10) {
+        return NextResponse.json(
+          {
+            message:
+              "Please enter a valid UK phone number.",
+          },
+          { status: 400 }
+        );
+      }
     }
 
+    // Address
+    if (address.length > 1000) {
+      return NextResponse.json(
+        {
+          message:
+            "Address must be 1000 characters or fewer.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Logo URL
+    if (logoUrl.length > 1000) {
+      return NextResponse.json(
+        { message: "Invalid logo URL." },
+        { status: 400 }
+      );
+    }
+
+    const settingsToSave = {
+      companyName,
+      email,
+      phone,
+      address,
+      logoUrl,
+    };
+
     await prisma.$transaction(
-      validEntries.map(([key, value]) =>
-        prisma.setting.upsert({
-          where: {
-            key,
-          },
-          update: {
-            value,
-          },
-          create: {
-            key,
-            value,
-          },
-        })
+      Object.entries(settingsToSave).map(
+        ([key, value]) =>
+          prisma.setting.upsert({
+            where: {
+              key,
+            },
+            update: {
+              value,
+            },
+            create: {
+              key,
+              value,
+            },
+          })
       )
     );
 

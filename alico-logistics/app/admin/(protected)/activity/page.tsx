@@ -1,8 +1,13 @@
 import PageHeader from "@/app/admin/components/ui/PageHeader";
 import Pagination from "@/app/admin/components/ui/Pagination";
 import { prisma } from "@/lib/prisma";
-import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
+import {
+  format,
+  formatDistanceToNow,
+  isToday,
+  isYesterday,
+} from "date-fns";
 
 const PAGE_SIZE = 10;
 
@@ -39,6 +44,7 @@ export default async function ActivityPage({
       select: {
         id: true,
         name: true,
+        subject: true,
         createdAt: true,
       },
     }),
@@ -53,28 +59,39 @@ export default async function ActivityPage({
           }
         : undefined,
       select: {
-        id: true,
-        fullName: true,
-        createdAt: true,
-      },
+          id: true,
+          fullName: true,
+          service: true,
+          origin: true,
+          destination: true,
+          createdAt: true,
+        },
     }),
   ]);
 
-  const activities = [
-    ...contacts.map((contact) => ({
-      id: contact.id,
-      type: "contact" as const,
-      name: contact.name,
-      createdAt: contact.createdAt,
-    })),
+    const activities = [
+      ...contacts.map((contact) => ({
+        id: contact.id,
+        type: "contact" as const,
+        name: contact.name,
+        subject: contact.subject,
+        service: null,
+        origin: null,
+        destination: null,
+        createdAt: contact.createdAt,
+      })),
 
-    ...quotes.map((quote) => ({
-      id: quote.id,
-      type: "quote" as const,
-      name: quote.fullName,
-      createdAt: quote.createdAt,
-    })),
-  ]
+      ...quotes.map((quote) => ({
+        id: quote.id,
+        type: "quote" as const,
+        name: quote.fullName,
+        subject: null,
+        service: quote.service,
+        origin: quote.origin,
+        destination: quote.destination,
+        createdAt: quote.createdAt,
+      })),
+    ]
     .filter((activity) => {
       if (!type) return true;
       return activity.type === type;
@@ -97,6 +114,30 @@ export default async function ActivityPage({
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE
   );
+  function getActivityGroup(date: Date) {
+  if (isToday(date)) return "Today";
+  if (isYesterday(date)) return "Yesterday";
+
+  return format(date, "dd MMM yyyy");
+}
+
+const groupedActivities = paginatedActivities.reduce(
+  (groups, activity) => {
+    const group = getActivityGroup(activity.createdAt);
+
+    if (!groups[group]) {
+      groups[group] = [];
+    }
+
+    groups[group].push(activity);
+
+    return groups;
+  },
+  {} as Record<
+    string,
+    typeof paginatedActivities
+  >
+);
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -151,14 +192,23 @@ export default async function ActivityPage({
           </h2>
         </div>
 
-        <div className="divide-y divide-slate-200">
-          {paginatedActivities.length === 0 ? (
-            <div className="px-6 py-10 text-center text-slate-500">
-              No activity found.
-            </div>
-          ) : (
+<div>
+  {paginatedActivities.length === 0 ? (
+    <div className="px-6 py-10 text-center text-slate-500">
+      No activity found.
+    </div>
+  ) : (
+    Object.entries(groupedActivities).map(
+      ([group, groupActivities]) => (
+        <div key={group}>
+          <div className="border-y border-slate-200 bg-slate-50 px-6 py-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {group}
+            </p>
+          </div>
 
-            paginatedActivities.map((activity) => (
+          <div className="divide-y divide-slate-200">
+            {groupActivities.map((activity) => (
               <Link
                 key={`${activity.type}-${activity.id}`}
                 href={
@@ -187,22 +237,47 @@ export default async function ActivityPage({
                       : `New quote request from ${activity.name}`}
                   </p>
                 </div>
-
+                  {activity.type === "contact" ? (
+                    activity.subject && (
+                      <p className="mt-1 text-sm text-slate-600">
+                        {activity.subject}
+                      </p>
+                    )
+                  ) : (
+                    <p className="mt-1 text-sm text-slate-600">
+                      {activity.service}
+                      {activity.origin && activity.destination && (
+                        <>
+                          {" • "}
+                          {activity.origin} → {activity.destination}
+                        </>
+                      )}
+                    </p>
+                  )}
                 <p
                   className="mt-2 text-xs text-slate-500"
                   title={activity.createdAt.toLocaleString()}
                 >
-                  {formatDistanceToNow(activity.createdAt, {
-                    addSuffix: true,
-                  })}
+                  {formatDistanceToNow(
+                    activity.createdAt,
+                    {
+                      addSuffix: true,
+                    }
+                  )}
                   {" • "}
-                  {activity.createdAt.toLocaleDateString()}
+                  {format(
+                    activity.createdAt,
+                    "dd MMM yyyy"
+                  )}
                 </p>
               </Link>
-            ))
-
-          )}
+            ))}
+          </div>
         </div>
+      )
+    )
+  )}
+</div>
       </section>
 
       <Pagination

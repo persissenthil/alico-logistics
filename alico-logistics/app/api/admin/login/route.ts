@@ -3,12 +3,36 @@ import bcrypt from "bcrypt";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { createSessionToken } from "@/lib/session";
+import {
+  checkLoginRateLimit,
+  clearLoginRateLimit,
+} from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const { email, password } = body;
+      if (
+        !body ||
+        typeof body !== "object" ||
+        Array.isArray(body)
+      ) {
+        return NextResponse.json(
+          { message: "Invalid login request." },
+          { status: 400 }
+        );
+      }
+
+      const email =
+        typeof body.email === "string"
+          ? body.email.trim().toLowerCase()
+          : "";
+
+      const password =
+        typeof body.password === "string"
+          ? body.password
+          : "";
+
 
     if (!email || !password) {
       return NextResponse.json(
@@ -16,7 +40,39 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+const forwardedFor = request.headers.get("x-forwarded-for");
 
+const ip =
+  forwardedFor?.split(",")[0]?.trim() ||
+  request.headers.get("x-real-ip") ||
+  "unknown";
+
+const rateLimitKey = `${ip}:${email}`;
+
+const rateLimit = checkLoginRateLimit(rateLimitKey);
+
+if (!rateLimit.allowed) {
+  const retryAfterSeconds = Math.max(
+    1,
+    Math.ceil(
+      ((rateLimit.resetAt ?? Date.now()) - Date.now()) /
+        1000
+    )
+  );
+
+  return NextResponse.json(
+    {
+      message:
+        "Too many login attempts. Please try again later.",
+    },
+    {
+      status: 429,
+      headers: {
+        "Retry-After": retryAfterSeconds.toString(),
+      },
+    }
+  );
+}
     const admin = await prisma.admin.findUnique({
       where: {
         email,
@@ -42,7 +98,7 @@ export async function POST(request: Request) {
         { status: 401 }
       );
     }
-
+    clearLoginRateLimit(rateLimitKey);
     const token = await createSessionToken(admin.id);
 
     const cookieStore = await cookies();

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-
+import QuoteReplyForm from "@/app/admin/components/QuoteReplyForm";
 import { prisma } from "@/lib/prisma";
 
 type QuoteDetailsPageProps = {
@@ -153,6 +153,11 @@ export default async function QuoteDetailsPage({
           </div>
         </div>
       </div>
+      <QuoteReplyForm
+  quoteId={quote.id}
+  customerName={quote.fullName}
+  originalSubject={`Quote request - ${quote.service}`}
+/>
     </div>
   );
 }
